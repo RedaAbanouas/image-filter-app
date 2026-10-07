@@ -1,4 +1,4 @@
-# EdgeLab — Django + OpenCV
+# Image Filter Processing App — Django + OpenCV
 
 A small interactive web app for the requested image pipeline:
 
