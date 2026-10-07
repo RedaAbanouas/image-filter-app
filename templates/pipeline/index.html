@@ -1,0 +1,38 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Image Filter Pipeline App</title>
+  <link rel="stylesheet" href="{% static 'pipeline.css' %}">
+</head>
+<body>
+  <main class="shell">
+    <section class="intro"><h1>Image Filter Pipeline App</h1></section>
+    <section class="workspace">
+      <form method="post" enctype="multipart/form-data" class="controls" id="form">{% csrf_token %}
+        <div class="section-head"><span class="step">01</span><div><h2>Configure pipeline</h2><p>Choose an image and tune the processing.</p></div></div>
+        <label class="upload" for="image"><span class="upload-icon">↑</span><strong id="file-name">Drop an image here</strong><span>or click to browse · PNG, JPG, WEBP · 10 MB max</span><input id="image" name="image" type="file" accept="image/*" required></label>
+        <div class="field"><label for="filter">DENOISING FILTER</label><select id="filter" name="filter">{% for key,label in filters.items %}<option value="{{ key }}" {% if selected_filter == key %}selected{% endif %}>{{ label }}{% if key == 'gaussian' %} blur{% elif key == 'median' %} blur{% else %} filter{% endif %}</option>{% endfor %}</select></div>
+        <div class="field"><label for="kernel">KERNEL SIZE <span class="muted">odd values only</span></label><div class="range-line"><input id="kernel" name="kernel_size" type="range" min="3" max="31" step="2" value="{{ kernel_size }}"><output id="kernel-out">{{ kernel_size }} × {{ kernel_size }}</output></div></div>
+        <div class="thresholds"><div class="field"><label for="low">LOW THRESHOLD</label><input id="low" name="low_threshold" type="number" min="0" max="254" value="{{ low_threshold }}"></div><div class="field"><label for="high">HIGH THRESHOLD</label><input id="high" name="high_threshold" type="number" min="1" max="255" value="{{ high_threshold }}"></div></div>
+        <button class="run" type="submit">Run edge detection <span>→</span></button>
+        
+      </form>
+      <div class="results">
+        {% if error %}<div class="message error">{{ error }}</div>{% endif %}
+        {% if stages %}
+        <div class="result-head"><div><span class="eyebrow">02 · PIPELINE OUTPUT</span><h2>{{ filter_label }} + Canny</h2></div><span class="pill">{{ kernel_size }} px kernel</span></div>
+        <div class="stage-grid">{% for key,label in stages.items %}<article class="stage"><div class="stage-label"><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ key|title }}</div><div class="image-frame"><img src="{{ label }}" alt="{{ key|title }} stage"></div></article>{% endfor %}</div>
+        {% else %}<div class="empty"><div class="empty-art"><span>▧</span><i>⌁</i><b>✳</b></div><h2>Your results will appear here</h2><p>Upload an image and run the pipeline to view every processing stage.</p><div class="flow"><span>Image</span><i>→</i><span>Gray</span><i>→</i><span>Filter</span><i>→</i><span>Gradient</span><i>→</i><span>Canny</span></div></div>{% endif %}
+      </div>
+    </section>
+  </main>
+  <script>
+    const range = document.querySelector('#kernel');
+    range.addEventListener('input', () => document.querySelector('#kernel-out').value = `${range.value} × ${range.value}`);
+    document.querySelector('#image').addEventListener('change', e => { if (e.target.files.length) document.querySelector('#file-name').textContent = e.target.files[0].name; });
+    document.querySelector('#form').addEventListener('submit', e => { const low = +document.querySelector('#low').value, high = +document.querySelector('#high').value; if (low >= high) { e.preventDefault(); alert('Low threshold must be smaller than high threshold.'); } });
+  </script>
+</body>
+</html>
